@@ -5,7 +5,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-image: url('./assets/backgrounds/EC-logo-large-comp.png');
+  background-image: url('./assets/backgrounds/EC-logo-large-comp.png'), url('./assets/backgrounds/EC-Veaichytxt-comp.png'), url('./assets/backgrounds/EC-background.jpeg');
   background-size: cover;
   background-repeat: no-repeat;
   background-attachment: fixed;
@@ -22,7 +22,7 @@
 
   .App{
     position: absolute;
-    background-image: url('./assets/backgrounds/EC_Mobile_logo.png');
+    background-image: url('./assets/backgrounds/EC_Mobile_logo.png'), url('./assets/backgrounds/EC-background-Mobile.jpeg');
     background-size: contain;
     background-repeat: no-repeat;
     background-attachment: fixed;
