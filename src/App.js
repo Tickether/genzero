@@ -51,7 +51,7 @@ function App() {
               return;
             }
           }
-          console.log(gtokensOwned)
+          console.log(gtokensOwned.length)
           for(let i = 0; i < gtokensOwned.length; i++){
             const isMinted = await genContract.isMinted(i);
             if (isMinted === false) {
@@ -60,7 +60,7 @@ function App() {
               setNotMinted(x);
             }
           }
-          console.log(gtokensNotMinted)
+          console.log(gtokensNotMinted.length)
           if (gtokensNotMinted.length === 0) {
             return;
           } 
@@ -181,8 +181,9 @@ function App() {
         </div>
 
         <p className="inactive">
-          {(isConnected && gtokensOwned.length>0) && (<span>Connected.<br></br> You have {gtokensNotMinted.length} Gen-0 available to mint.</span>) }
-          {(isConnected && gtokensOwned.length===0)&& <span>Connected. <br></br> You must hold Arcturium to mint. Public mint opens 2:00 pm EST 24/09/2022</span>}
+          {(isConnected) && (<span>Connected.</span>) }
+          {(isConnected && gtokensNotMinted.length===0) && (<span> You must hold Arcturium to mint. Public mint opens 2:00 pm EST 24/09/2022</span>)}
+          { (isConnected && gtokensNotMinted.length>0) && (<span>You have {gtokensNotMinted.length} Gen-0 available to mint.</span>)}
           
           </p>
         
