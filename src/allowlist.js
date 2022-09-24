@@ -1,6 +1,5 @@
 const allowListAddresses = () => {
-    return [
-    '0x6635efbb877bdb525fa860c89015e0ced93262a4',
+    return ['0x6635efbb877bdb525fa860c89015e0ced93262a4',
     '0x3a8713065e4daa9603b91ef35d6a8336ef7b26c6',
     '0xd2916dc7af2f74656c709e71299ae33fa3d07b56',
     '0xcc8b5da94e367c1c7d3d6130990f2b117a5bb0ed',

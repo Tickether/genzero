@@ -3,12 +3,12 @@ const keccak256 = require('keccak256');
 
 const allowlist = require ('./allowlist');
 
-let allowListAddresses = allowlist.allowListAddresses();
+let allowList = allowlist.allowListAddresses();
 
 
 
 
-const leafNodes = allowListAddresses.map(addr => keccak256(addr));
+const leafNodes = allowList.map(addr => keccak256(addr));
 const merkleTree = new MerkleTree(leafNodes, keccak256, {sortPairs: true});
 
 console.log(leafNodes);
@@ -29,13 +29,15 @@ let hexProof = "[" + hex_Proof + "]";
 
 console.log('hex Proof: ',hexProof)
 console.log('hex Proof: ',hexproof)
-//let index = allowListAddresses.indexOf(address);
-let index = allowListAddresses.indexOf("0x4f0AD22Da38Ba8dcE5B953Dc24917DdC64C67459")
+//let index = allowList.indexOf(address);
+let index = allowList.indexOf('0x1e7728bc568439Fa8aEf0afCF035657887d3623f')
 
 console.log(index)
-//console.log(leafNodes[2])
 
 console.log(merkleTree.verify(hexproof, clamingAddress, rootHash));
+console.log(leafNodes[76])
+console.log()
+console.log('claiming address:',clamingAddress)
 console.log('root hash: ', rootHash )
 
 

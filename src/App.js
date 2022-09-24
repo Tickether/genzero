@@ -6,21 +6,21 @@ import gen from './Gen.json';
 import { Buffer } from "buffer/";
 window.Buffer = window.Buffer || Buffer;
 
-const {MerkleTree} =  require('merkletreejs');
-const keccak256 = require('keccak256');
+//const {MerkleTree} =  require('merkletreejs');
+//const keccak256 = require('keccak256');
 
-const allowlist = require ('./allowlist');
+//const allowlist = require ('./allowlist');
 
 
 const arcAddress = '0x4B396F08cDa12A9F6C0cD9cBab6bDfa06585077B';
-const genAddress = '0x0F8Eb4B290196D4b419728Bd1be197b13EC77e92';
+const genAddress = '0x68Dda751306a10C7636D929370f98e0F786c80Ef';
 
 
-const allowList = allowlist.allowListAddresses();
+//const allowList = allowlist.allowListAddresses();
 
-let leafNodes = allowList.map(addr => keccak256(addr));
+//let leafNodes = allowList.map(addr => keccak256(addr));
 
-let merkleTree = new MerkleTree(leafNodes, keccak256, {sortPairs: true});
+//let merkleTree = new MerkleTree(leafNodes, keccak256, {sortPairs: true});
 
 function App() {
   const [accounts, setAccounts] = useState ([]);
@@ -53,7 +53,7 @@ function App() {
             for(let i = 0; i < data.result.length; i++) {
               const owner = data.result[i]['to'];
               if (owner === accounts[0]) {
-                arcTokensOwned.push(i);
+                arcTokensOwned.push(data.result[i]['tokenID']);
               } else {
                 console.log("err");
               };
@@ -77,10 +77,11 @@ function App() {
               
             }
           });
+          console.log(genTokensOwned)
         genTokensNotMinted.push.apply(genTokensNotMinted,arcTokensOwned);
         
         for(let i = 0; i < genTokensOwned.length; i++) {
-          let tokenID = genTokensOwned.map(Number)[i];
+          let tokenID = genTokensOwned[i];
           if (arcTokensOwned.includes(tokenID)) {
             let index = genTokensNotMinted.indexOf(tokenID)
             genTokensNotMinted.splice(index,1)
@@ -131,19 +132,28 @@ function App() {
     if (window.ethereum) {
       const provider = new ethers.providers.Web3Provider(window.ethereum);
       const signer = provider.getSigner();
-      const address = (await signer.getAddress()).toString();
+      const address = (await signer.getAddress());
             console.log(address)
-      let index = allowList.indexOf(address);
-            console.log(index)
+      //let index = null
+      //for(let i =0; i < allowList.length; i++) {
+      //  if (allowList[i] == address) {
+      //    index = i
+      //    console.log('yay!')
+      //  } else {
+      //    index = -1
+      //  }
+      //}
+      //console.log(typeof(allowList[0]))
+      
       const genContract = new ethers.Contract(
         genAddress,
         gen.abi,
         signer
       );
-      if (index === -1) {
-        alert('You must be allowlisted to mint these Gen-0 Characters');
-        return;
-    } else {
+      //if (index === -1) {
+      //  alert('You must be allowlisted to mint these Gen-0 Characters');
+      //  return;
+    //} else {
       try {
         if (globalNotMinted.length === 0) {
           setMinting(Boolean(0));
@@ -161,10 +171,10 @@ function App() {
             console.log(split)
             console.log(tokenRandom)
             
-            let clamingAddress = leafNodes[index];
-            let hexProof = merkleTree.getHexProof(clamingAddress);
+            //let clamingAddress = leafNodes[index];
+            //let hexProof = merkleTree.getHexProof(clamingAddress);
 
-            const response = await genContract.mintPublicGen(tokenRandom, hexProof)
+            const response = await genContract.mintPublicGen(tokenRandom, {value: ethers.utils.parseEther((0.000 * mintAmount).toString())})
             
             console.log('response: ', response) 
             setNotMinted(split)
@@ -178,7 +188,7 @@ function App() {
       catch (err) {
           console.log('error', err )
       }
-    }
+    //}
       
     }
   }
@@ -208,6 +218,7 @@ function App() {
         {isTotalSupply && <div> <p className='inactive'> {totalSupply} of 6000 Gen-0 Characters have been minted.</p></div>}
         <p className='inactive'>{(isMinting && Boolean(globalArcTokens) ) && <span>Waiting on confirmation...</span>} {isMinted && <span>Minting...</span>}</p>
         {(isMinting && !Boolean(globalArcTokens)) && <p className='inactive'>Mint cancelled. You must hold Arcturium to mint. Public mint opens 2:00 pm EST 24/09/2022</p>}
+        {(isConnected && globalNotMinted.length === 0) && <p className='inactive'>You have minted all available Gen-0. Public mint opens 2:00 pm EST 24/09/2022 </p>}
         
 
 
