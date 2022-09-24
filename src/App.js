@@ -3,6 +3,14 @@ import './App.css';
 import { ethers } from "ethers";
 import arc from './Arc.json';
 import gen from './Gen.json';
+import { Buffer } from "buffer/";
+window.Buffer = window.Buffer || Buffer;
+
+const {MerkleTree} =  require('merkletreejs');
+const keccak256 = require('keccak256');
+
+const allowlist = require ('./allowlist');
+
 
 const arcAddress = '0x4B396F08cDa12A9F6C0cD9cBab6bDfa06585077B';
 const genAddress = '0x7a6B8E86677A226deAcCF971FbA0F0dD78FfEE8A';
