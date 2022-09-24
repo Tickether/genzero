@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=PT+Mono&display=swap');
+
 .App {
   text-align: center;
   position: absolute;
@@ -5,24 +7,128 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-image: url('./assets/backgrounds/EC-logo-large-comp.png'), url('./assets/backgrounds/EC-Veaichytxt-comp.png'), url('./assets/backgrounds/EC-background.jpeg');
+  background-image: url('./assets/backgrounds/EC-background.jpeg');
   background-size: cover;
   background-repeat: no-repeat;
   background-attachment: fixed;
   background-position: 50% 50%;
+  overflow: hidden;
+}
 
+p {
+  font-family: 'PT Mono', monospace;
+  color: white;
+  text-align: left;
+}
+
+.inactive {
+  color: darkgrey;
 }
 
 .container{
-  margin-top: 500px;
-  margin-left: 10px;
+  width: 60%;
+  height: 80%;
+  padding: 10% 20%;
 }
 
-@media only screen and (max-width : 1024px) {
+.heightBox {
+  bottom: 50vh;
+  align-items: baseline;
+  position:absolute;
+}
+
+.feed {
+  text-align: left;
+}
+
+.button {
+  color: rgb(255,0,123);
+}
+
+.button .check {
+  display: inline-block;
+  width: 0;
+  opacity: 0;
+}
+
+.button:hover {
+  cursor: pointer;
+  color: rgb(0,255,0);
+}
+
+.button:hover .check {
+  width: 2em;
+  opacity: 1;
+  transition: width .7s;
+  transition: opacity .5s;
+}
+
+.head {
+  color: rgb(255,0,123);
+}
+
+.rectangleblink {
+  font-size: 1.5em;
+  color: grey;
+  animation: blinker 1.5s linear infinite;
+  text-align: left;
+}
+
+@keyframes blinker {
+  50% {
+    opacity: 0;
+  }
+}
+
+input {
+  font-family: 'PT Mono', monospace;
+  color: white;
+  background-color: rgba(0,0,0,0);
+  outline: 0;
+  border: 0;
+  width: 6em;
+  text-align: center;
+  font-size: 1.2em;
+}
+
+.mintControls {
+  text-align: left;
+}
+
+.upArrow {
+  border: solid rgb(255,0,123);
+  border-width: 0 3px 3px 0;
+  display: inline-block;
+  padding: 3px;
+  transform: rotate(-135deg);
+  -webkit-transform: rotate(-135deg);
+}
+
+.downArrow {
+  border: solid rgb(255,0,123);
+  border-width: 0 3px 3px 0;
+  display: inline-block;
+  padding: 3px;
+  transform: rotate(45deg);
+  -webkit-transform: rotate(45deg);
+  margin-bottom: .2em;
+}
+
+.button:hover .downArrow {
+  border-color: rgb(0,255,0);
+  margin-bottom: -.1em;
+}
+.button:hover .upArrow {
+  border-color: rgb(0,255,0);
+  margin-bottom: .3em;
+}
+
+
+@media only screen and (max-width : 700px) {
 
   .App{
     position: absolute;
-    background-image: url('./assets/backgrounds/EC_Mobile_logo.png'), url('./assets/backgrounds/EC-background-Mobile.jpeg');
+    background-image: url('./assets/backgrounds/EC-background-Mobile.jpeg');
     background-size: contain;
     background-repeat: no-repeat;
     background-attachment: fixed;
@@ -30,7 +136,7 @@
   }
 
   .container{
-    margin-top: 400px;
+    margin-top: 50%;
     margin-left: 10px;
   }
 

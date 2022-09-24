@@ -11,7 +11,14 @@ const genAddress = '0xBcBA7755Ec71837E7871b324faDEb0AACdb07444';
 function App() {
   const [accounts, setAccounts] = useState ([]);
   const isConnected = Boolean(accounts[0]);
+  const [isMinting,setMinting] = useState(Boolean(0));
+  const [isMinted,setMinted] = useState(Boolean(0));
+  const [isArcHolder,setArcHolder] = useState(Boolean(0));
   const [mintAmount, setMintAmount] = useState(1);
+  const [totalSupply,updateTotalSupply] = useState([]);
+  const [isTotalSupply,setTotalSupply] = useState(Boolean(totalSupply[0]));
+  const [gtokensOwned,setTokensOwned] = useState([]);
+  const [gtokensNotMinted,setNotMinted] = useState([]);
 
   async function connectAccount() {
     if (window.ethereum) {
@@ -19,6 +26,48 @@ function App() {
             method: 'eth_requestAccounts',
         });
         setAccounts(accounts);
+        
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        const signer = provider.getSigner();
+        const address = (await signer.getAddress()).toString();
+        const genContract = new ethers.Contract(
+          genAddress,
+          gen.abi,
+          signer
+        );
+        const arcContract = new ethers.Contract(
+          arcAddress,
+          arc.abi,
+          signer
+        );
+        setArcHolder(Boolean(gtokensOwned[0]));
+        try {
+          for(let i = 0; i < 6; i++) {
+            const owner = await arcContract.ownerOf(i);
+            if (owner === address) {
+              setTokensOwned(i);
+              setArcHolder(Boolean(gtokensOwned[0]))
+            } else {
+              return;
+            }
+          }
+          console.log(gtokensOwned)
+          for(let i = 0; i < gtokensOwned.length; i++){
+            const isMinted = await genContract.isMinted(i);
+            if (isMinted === false) {
+              let x = gtokensNotMinted;
+              x.push(gtokensOwned[i]);
+              setNotMinted(x);
+            }
+          }
+          console.log(gtokensNotMinted)
+          if (gtokensNotMinted.length === 0) {
+            return;
+          } 
+        } 
+        catch (err) {
+            console.log('error', err )
+        }
     }
   }
 
@@ -28,7 +77,7 @@ function App() {
   };
 
   const handleIncrement = () => {
-    if (mintAmount >= 6 ) return;
+    if (mintAmount >= gtokensNotMinted.length ) return;
     setMintAmount(mintAmount + 1);
   };
   
@@ -43,8 +92,8 @@ function App() {
     );
     try {
         const response = await genContract.totalSupply();
-        alert(`${response}/3333 Crazy Tigers have been MInted!`);
-        console.log('response: ', response)
+        updateTotalSupply(ethers.utils.formatUnits(response,0));
+        setTotalSupply(Boolean(totalSupply));
     } 
     catch (err) {
         console.log('error', err )
@@ -52,6 +101,7 @@ function App() {
 
   }
   async function handleGenMint() {
+    setMinting(Boolean(1))
     if (window.ethereum) {
       const provider = new ethers.providers.Web3Provider(window.ethereum);
       const signer = provider.getSigner();
@@ -68,13 +118,14 @@ function App() {
       );
       let tokensOwned = []
       let tokensNotMinted = []
+      setArcHolder(Boolean(tokensOwned[0]));
       try {
         for(let i = 0; i < 6; i++) {
           const owner = await arcContract.ownerOf(i);
           if (owner === address) {
             tokensOwned.push(i);
+            setArcHolder(Boolean(tokensOwned[0]))
           } else {
-            alert('You must be owner to mint these Gen-0!!!')
             return;
           }
         }
@@ -87,7 +138,6 @@ function App() {
         }
         console.log(tokensNotMinted)
         if (tokensNotMinted.length === 0) {
-          alert('All your owned Arc has been minted!!!')
           return;
         } else {
           // shuffle tokenNull array 
@@ -96,7 +146,6 @@ function App() {
           });
           console.log(tokenRandom)
           if (mintAmount > tokenRandom.length) {
-            alert('You cannot mint more than your remaining Arc!!!')
             return;
           } else {
             const split = tokenRandom.splice(mintAmount); 
@@ -105,6 +154,8 @@ function App() {
         
             const response = await genContract.mintGen(tokenRandom);
             console.log('response: ', response) 
+            setMinting(Boolean(0));
+            setMinted(Boolean(1))
           }
         }
       } 
@@ -118,43 +169,64 @@ function App() {
     
     <div className="App">
       <div className="container">
-        <div className='connect'>
-          {isConnected ? (
-            <button> 
-              Connected
-            </button>
+        <div className="heightBox">
+        <div className='feed'>
+        <div>
+          {!isConnected ? (
+            <p className='paragraphs'>Please connect your wallet to mint</p>
           ) : (
-            <button onClick={connectAccount}>
-              Connect
-            </button>
+            <p className='inactive'>Please connect your wallet to mint</p>
+          )
+          }
+        </div>
+
+        <p className="inactive">
+          {(isConnected && gtokensOwned.length>0) && (<span>Connected.<br></br> You have {gtokensNotMinted.length} Gen-0 available to mint.</span>) }
+          {(isConnected && gtokensOwned.length===0)&& <span>Connected. <br></br> You must hold Arcturium to mint. Public mint opens 2:00 pm EST 24/09/2022</span>}
+          
+          </p>
+        
+        {isTotalSupply && <div> <p className='inactive'> {totalSupply} of 6000 Gen-0 Characters have been minted.</p></div>}
+        <p className='inactive'>{(isMinting && isArcHolder ) && <span>Minting...</span>} {isMinted && <span>Minted.</span>}</p>
+        {(isMinting && !isArcHolder) && <p className='inactive'>Minting cancelled. You must hold Arcturium to mint. Public mint opens 2:00 pm EST 24/09/2022</p>}
+        
+
+
+
+        <span className="rectangleblink">&#9646;</span>
+        { !isConnected && (
+              <p className="button" onClick={connectAccount}><span className="check">>></span>| Connect</p>
           )}
         </div>
         <div>
-          {isConnected ? (
-            <div>
+          {(isConnected && isArcHolder) &&  ( 
+            <div className="mintControls">
               <div>
-                <button
-                    onClick={handleDecrement}>-
-                </button>
+                <p><span className='button'
+                    onClick={handleDecrement}><i className="downArrow"></i>
+                    </span>
                 <input 
                   readOnly
                   type='number' 
                   value={mintAmount}/>
-                <button
-                  onClick={handleIncrement}>+
-                </button>
+                <span className='button'
+                  onClick={handleIncrement}><i className="upArrow"></i>
+                  </span>
+                </p>
               </div>
-              <button 
-                onClick={handleGenMint}>Mint Now
-              </button>
-              <button 
-                onClick={getTotalSupply}>#Minted?
-              </button>
+              <p className='mintButtons'>
+                <span className='button' 
+                onClick={handleGenMint}><span className="check">>></span>| Mint Now
+              </span> <br></br>
+              <span className='button' 
+                onClick={getTotalSupply}><span className="check">>></span>| #Minted?
+                </span>
+              </p>
             </div>
-          ) : (
-            <p className='paragraphs'>You must be connected to mint !!! </p>
-          )}
+          ) }
+          {(isConnected && gtokensNotMinted===0) && <p>All of your Arcturium has been redeemed already. Public mint opens 2:00 pm EST 24/09/2022</p>}
         </div>
+      </div>
       </div>
     </div>
   );
