@@ -4,8 +4,8 @@ import { ethers } from "ethers";
 import arc from './Arc.json';
 import gen from './Gen.json';
 
-const arcAddress = '0xf710F3e8bE1180a3a4863330D5009278e799d4A8';
-const genAddress = '0xBcBA7755Ec71837E7871b324faDEb0AACdb07444';
+const arcAddress = '0x4B396F08cDa12A9F6C0cD9cBab6bDfa06585077B';
+const genAddress = '0x7a6B8E86677A226deAcCF971FbA0F0dD78FfEE8A';
 
 function App() {
   const [accounts, setAccounts] = useState ([]);
@@ -23,16 +23,16 @@ function App() {
  
 
   async function connectAccount() {
-    const  arcTokensOwned = [];
-    const  genTokensOwned = [];
-    const genTokensNotOwned =  [];
+    let  arcTokensOwned = [];
+    let  genTokensOwned = [];
+    let genTokensNotMinted =  [];
     if (window.ethereum) {
         const accounts = await window.ethereum.request({
             method: 'eth_requestAccounts',
         });
         setAccounts(accounts);
 
-        const arcURL = 'https://api-goerli.etherscan.io/api?module=account&action=tokennfttx&contractaddress='+arcAddress+'&address='+accounts[0]+'&page=1&offset=100&startblock=0&endblock=27025780&sort=asc&apikey=S3KASSMNT3ARZHEUU2NM9G3IMXH98BB8W7'
+        const arcURL = 'https://api.etherscan.io/api?module=account&action=tokennfttx&contractaddress='+arcAddress+'&address='+accounts[0]+'&page=1&offset=100&startblock=0&endblock=27025780&sort=asc&apikey=S3KASSMNT3ARZHEUU2NM9G3IMXH98BB8W7'
         await fetch(arcURL)
           .then((response) => { return response.json();})
           .then((data) => {
@@ -46,36 +46,38 @@ function App() {
               
             }
           });
+          console.log(arcTokensOwned)
 
           const genURL = 'https://api-goerli.etherscan.io/api?module=account&action=tokennfttx&contractaddress='+genAddress+'&address='+accounts[0]+'&page=1&offset=100&startblock=0&endblock=27025780&sort=asc&apikey=S3KASSMNT3ARZHEUU2NM9G3IMXH98BB8W7'
         await fetch(genURL)
           .then((response) => { return response.json();})
           .then((data) => {
+            console.log(data)
             for(let i = 0; i < data.result.length; i++) {
               const owner = data.result[i]['to'];
               if (owner === accounts[0]) {
-                genTokensOwned.push(i);
+                genTokensOwned.push(data.result[i]['tokenID']);
               } else {
                 console.log("err");
               };
               
             }
-            
           });
-        genTokensNotOwned.push.apply(genTokensNotOwned,arcTokensOwned);
+        genTokensNotMinted.push.apply(genTokensNotMinted,arcTokensOwned);
         
         for(let i = 0; i < genTokensOwned.length; i++) {
-          const tokenID = genTokensOwned[i];
+          let tokenID = genTokensOwned.map(Number)[i];
           if (arcTokensOwned.includes(tokenID)) {
-            let index = genTokensNotOwned.indexOf(tokenID)
-            genTokensNotOwned.splice(index,1)
+            let index = genTokensNotMinted.indexOf(tokenID)
+            genTokensNotMinted.splice(index,1)
           } else {
             console.log('err');
           }
         };
+        console.log(genTokensNotMinted)
         setArcTokens(arcTokensOwned)
         setGenTokens(genTokensOwned)
-        setNotMinted(genTokensNotOwned)
+        setNotMinted(genTokensNotMinted)
 
     }
   }
@@ -134,6 +136,7 @@ function App() {
             return;
           } else {
             const split = tokenRandom.splice(mintAmount); 
+            setNotMinted(split)
             console.log(split)
             console.log(tokenRandom)
         
@@ -141,7 +144,7 @@ function App() {
             console.log('response: ', response) 
             setMinting(Boolean(0));
             setMinted(Boolean(1))
-            connectAccount();
+
           }
         }
         
@@ -187,7 +190,7 @@ function App() {
           )}
         </div>
         <div>
-          {(isConnected && Boolean(globalArcTokens)) &&  ( 
+          {(isConnected && Boolean(globalArcTokens[0])) &&  ( 
             <div className="mintControls">
               <div>
                 <p><span className='button'
