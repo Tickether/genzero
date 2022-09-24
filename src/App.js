@@ -60,10 +60,6 @@ function App() {
               setNotMinted(x);
             }
           }
-          console.log(gtokensNotMinted.length)
-          if (gtokensNotMinted.length === 0) {
-            return;
-          } 
         } 
         catch (err) {
             console.log('error', err )
@@ -101,47 +97,23 @@ function App() {
 
   }
   async function handleGenMint() {
-    setMinting(Boolean(1))
+    setMinting(Boolean(1));
+    setMinted(Boolean(0));
     if (window.ethereum) {
       const provider = new ethers.providers.Web3Provider(window.ethereum);
       const signer = provider.getSigner();
-      const address = (await signer.getAddress()).toString();
       const genContract = new ethers.Contract(
         genAddress,
         gen.abi,
         signer
       );
-      const arcContract = new ethers.Contract(
-        arcAddress,
-        arc.abi,
-        signer
-      );
-      let tokensOwned = []
-      let tokensNotMinted = []
-      setArcHolder(Boolean(tokensOwned[0]));
+      setArcHolder(Boolean(gtokensOwned[0]));
       try {
-        for(let i = 0; i < 6; i++) {
-          const owner = await arcContract.ownerOf(i);
-          if (owner === address) {
-            tokensOwned.push(i);
-            setArcHolder(Boolean(tokensOwned[0]))
-          } else {
-            return;
-          }
-        }
-        console.log(tokensOwned)
-        for(let i = 0; i < tokensOwned.length; i++){
-          const isMinted = await genContract.isMinted(i);
-          if (isMinted === false) {
-            tokensNotMinted.push(tokensOwned[i]);
-          }
-        }
-        console.log(tokensNotMinted)
-        if (tokensNotMinted.length === 0) {
+        if (gtokensNotMinted.length === 0) {
           return;
         } else {
           // shuffle tokenNull array 
-          let tokenRandom = tokensNotMinted.sort(function () {
+          let tokenRandom = gtokensNotMinted.sort(function () {
             return Math.random() - 0.5;
           });
           console.log(tokenRandom)
@@ -158,6 +130,7 @@ function App() {
             setMinted(Boolean(1))
           }
         }
+        connectAccount();
       } 
       catch (err) {
           console.log('error', err )
