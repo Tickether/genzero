@@ -15,9 +15,15 @@ const allowlist = require ('./allowlist');
 const arcAddress = '0x4B396F08cDa12A9F6C0cD9cBab6bDfa06585077B';
 const genAddress = '0x7a6B8E86677A226deAcCF971FbA0F0dD78FfEE8A';
 
+
+const allowList = allowlist.allowListAddresses();
+
+let leafNodes = allowList.map(addr => keccak256(addr));
+
+let merkleTree = new MerkleTree(leafNodes, keccak256, {sortPairs: true});
+
 function App() {
   const [accounts, setAccounts] = useState ([]);
-  const [scanData, setData] = useState ([]);
   const isConnected = Boolean(accounts[0]);
   const [isMinting, setMinting] = useState (Boolean(0));
   const [isMinted, setMinted] = useState (Boolean(0));
@@ -125,11 +131,19 @@ function App() {
     if (window.ethereum) {
       const provider = new ethers.providers.Web3Provider(window.ethereum);
       const signer = provider.getSigner();
+      const address = (await signer.getAddress()).toString();
+            console.log(address)
+      let index = allowList.indexOf(address);
+            console.log(index)
       const genContract = new ethers.Contract(
         genAddress,
         gen.abi,
         signer
       );
+      if (index === -1) {
+        alert('You must be allowlisted to mint these Gen-0 Characters');
+        return;
+    } else {
       try {
         if (globalNotMinted.length === 0) {
           setMinting(Boolean(0));
@@ -146,8 +160,11 @@ function App() {
             const split = tokenRandom.splice(mintAmount); 
             console.log(split)
             console.log(tokenRandom)
-          
-            const response = await genContract.mintPublicGen((tokenRandom), {value: ethers.utils.parseEther((0.000 * mintAmount).toString())})
+            
+            let clamingAddress = leafNodes[index];
+            let hexProof = merkleTree.getHexProof(clamingAddress);
+
+            const response = await genContract.mintPublicGen(tokenRandom, hexProof)
             
             console.log('response: ', response) 
             setNotMinted(split)
@@ -161,6 +178,8 @@ function App() {
       catch (err) {
           console.log('error', err )
       }
+    }
+      
     }
   }
 
