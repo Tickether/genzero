@@ -18,7 +18,7 @@ const rootHash = merkleTree.getRoot();
 console.log('WL merkle tree/n', merkleTree.toString());
 console.log('root hash: ', rootHash )
 
-const clamingAddress = leafNodes[6770]; 
+const clamingAddress = leafNodes[900]; 
 
 
 

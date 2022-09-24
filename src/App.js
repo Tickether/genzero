@@ -13,7 +13,7 @@ const allowlist = require ('./allowlist');
 
 
 const arcAddress = '0x4B396F08cDa12A9F6C0cD9cBab6bDfa06585077B';
-const genAddress = '0x7a6B8E86677A226deAcCF971FbA0F0dD78FfEE8A';
+const genAddress = '0x0F8Eb4B290196D4b419728Bd1be197b13EC77e92';
 
 
 const allowList = allowlist.allowListAddresses();
