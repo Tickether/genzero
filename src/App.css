@@ -7,7 +7,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-image: url('../src/assets/backgrounds/EC-background.jpeg');
+  background-image: url('./assets/backgrounds/EC-background.jpeg');
   background-size: cover;
   background-repeat: no-repeat;
   background-attachment: fixed;
@@ -128,7 +128,7 @@ input {
 
   .App{
     position: absolute;
-    background-image: url('../src/assets/backgrounds/EC-background-Mobile.jpeg');
+    background-image: url('./assets/backgrounds/EC-background-Mobile.jpeg');
     background-size: contain;
     background-repeat: no-repeat;
     background-attachment: fixed;
