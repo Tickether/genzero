@@ -22,6 +22,11 @@ p {
   text-align: left;
 }
 
+.reconnect {
+  font-size: .5em;
+  display: inline;
+}
+
 .inactive {
   color: darkgrey;
 }

@@ -209,7 +209,7 @@ function App() {
         </div>
 
         <p className="inactive">
-          {(isConnected) && (<span>Connected.</span>) }
+          {(isConnected) && (<span>Connected. <p className='button reconnect' onclick={connectAccount()}>Reconnect</p></span>) }
           {(isConnected && globalArcTokens.length===0) && (<span> You must hold Arcturium to mint. Public mint opens 2:00 pm EST 24/09/2022</span>)}
           { (isConnected && globalNotMinted.length>0) && (<span>You have {globalNotMinted.length} Gen-0 available to mint.</span>)}
           
@@ -218,7 +218,7 @@ function App() {
         {isTotalSupply && <div> <p className='inactive'> {totalSupply} of 6000 Gen-0 Characters have been minted.</p></div>}
         <p className='inactive'>{(isMinting && Boolean(globalArcTokens) ) && <span>Waiting on confirmation...</span>} {isMinted && <span>Minting...</span>}</p>
         {(isMinting && !Boolean(globalArcTokens)) && <p className='inactive'>Mint cancelled. You must hold Arcturium to mint. Public mint opens 2:00 pm EST 24/09/2022</p>}
-        {(isConnected && globalNotMinted.length === 0) && <p className='inactive'>You have minted all available Gen-0. Public mint opens 2:00 pm EST 24/09/2022 </p>}
+        {(isConnected && globalNotMinted.length === 0 && globalArcTokens.length > 0) && <p className='inactive'>You have minted all available Gen-0. Public mint opens 2:00 pm EST 24/09/2022 </p>}
         
 
 
