@@ -136,12 +136,13 @@ function App() {
             return;
           } else {
             const split = tokenRandom.splice(mintAmount); 
-            setNotMinted(split)
             console.log(split)
             console.log(tokenRandom)
-        
-            const response = await genContract.mintGen(tokenRandom);
+          
+            const response = await genContract.mintPublicGen((tokenRandom), {value: ethers.utils.parseEther((0.000 * mintAmount).toString())})
+            
             console.log('response: ', response) 
+            setNotMinted(split)
             setMinting(Boolean(0));
             setMinted(Boolean(1))
 
@@ -190,7 +191,7 @@ function App() {
           )}
         </div>
         <div>
-          {(isConnected && Boolean(globalArcTokens[0])) &&  ( 
+          {(isConnected && globalArcTokens.length > 0) &&  ( 
             <div className="mintControls">
               <div>
                 <p><span className='button'
