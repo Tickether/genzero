@@ -1,69 +1,82 @@
 import { useState } from 'react';
 import './App.css';
 import { ethers } from "ethers";
-import arc from './Arc.json'
-import gen from './Gen.json'
-
+import arc from './Arc.json';
+import gen from './Gen.json';
 
 const arcAddress = '0xf710F3e8bE1180a3a4863330D5009278e799d4A8';
 const genAddress = '0xBcBA7755Ec71837E7871b324faDEb0AACdb07444';
 
 function App() {
   const [accounts, setAccounts] = useState ([]);
+  const [scanData, setData] = useState ([]);
   const isConnected = Boolean(accounts[0]);
-  const [isMinting,setMinting] = useState(Boolean(0));
-  const [isMinted,setMinted] = useState(Boolean(0));
-  const [isArcHolder,setArcHolder] = useState(Boolean(0));
-  const [mintAmount, setMintAmount] = useState(1);
-  const [totalSupply,updateTotalSupply] = useState([]);
-  const [isTotalSupply,setTotalSupply] = useState(Boolean(totalSupply[0]));
-  const [gtokensOwned,setTokensOwned] = useState([]);
-  const [gtokensNotMinted,setNotMinted] = useState([]);
+  const [isMinting, setMinting] = useState (Boolean(0));
+  const [isMinted, setMinted] = useState (Boolean(0));
+  const [mintAmount, setMintAmount] = useState (1);
+  const [totalSupply, updateTotalSupply] = useState ([]);
+  const [isTotalSupply, setTotalSupply] = useState (Boolean(totalSupply[0]));
+  const [globalArcTokens,setArcTokens] = useState([]);
+  const [globalGenTokens,setGenTokens] = useState([]);
+  const [globalNotMinted,setNotMinted] = useState([]);
+
+ 
 
   async function connectAccount() {
+    const  arcTokensOwned = [];
+    const  genTokensOwned = [];
+    const genTokensNotOwned =  [];
     if (window.ethereum) {
         const accounts = await window.ethereum.request({
             method: 'eth_requestAccounts',
         });
         setAccounts(accounts);
+
+        const arcURL = 'https://api-goerli.etherscan.io/api?module=account&action=tokennfttx&contractaddress='+arcAddress+'&address='+accounts[0]+'&page=1&offset=100&startblock=0&endblock=27025780&sort=asc&apikey=S3KASSMNT3ARZHEUU2NM9G3IMXH98BB8W7'
+        await fetch(arcURL)
+          .then((response) => { return response.json();})
+          .then((data) => {
+            for(let i = 0; i < data.result.length; i++) {
+              const owner = data.result[i]['to'];
+              if (owner === accounts[0]) {
+                arcTokensOwned.push(i);
+              } else {
+                console.log("err");
+              };
+              
+            }
+          });
+
+          const genURL = 'https://api-goerli.etherscan.io/api?module=account&action=tokennfttx&contractaddress='+genAddress+'&address='+accounts[0]+'&page=1&offset=100&startblock=0&endblock=27025780&sort=asc&apikey=S3KASSMNT3ARZHEUU2NM9G3IMXH98BB8W7'
+        await fetch(genURL)
+          .then((response) => { return response.json();})
+          .then((data) => {
+            for(let i = 0; i < data.result.length; i++) {
+              const owner = data.result[i]['to'];
+              if (owner === accounts[0]) {
+                genTokensOwned.push(i);
+              } else {
+                console.log("err");
+              };
+              
+            }
+            
+          });
+        genTokensNotOwned.push.apply(genTokensNotOwned,arcTokensOwned);
         
-        const provider = new ethers.providers.Web3Provider(window.ethereum);
-        const signer = provider.getSigner();
-        const address = (await signer.getAddress()).toString();
-        const genContract = new ethers.Contract(
-          genAddress,
-          gen.abi,
-          signer
-        );
-        const arcContract = new ethers.Contract(
-          arcAddress,
-          arc.abi,
-          signer
-        );
-        setArcHolder(Boolean(gtokensOwned[0]));
-        try {
-          for(let i = 0; i < 6; i++) {
-            const owner = await arcContract.ownerOf(i);
-            if (owner === address) {
-              setTokensOwned(i);
-              setArcHolder(Boolean(gtokensOwned[0]))
-            } else {
-              return;
-            }
+        for(let i = 0; i < genTokensOwned.length; i++) {
+          const tokenID = genTokensOwned[i];
+          if (arcTokensOwned.includes(tokenID)) {
+            let index = genTokensNotOwned.indexOf(tokenID)
+            genTokensNotOwned.splice(index,1)
+          } else {
+            console.log('err');
           }
-          console.log(gtokensOwned.length)
-          for(let i = 0; i < gtokensOwned.length; i++){
-            const isMinted = await genContract.isMinted(i);
-            if (isMinted === false) {
-              let x = gtokensNotMinted;
-              x.push(gtokensOwned[i]);
-              setNotMinted(x);
-            }
-          }
-        } 
-        catch (err) {
-            console.log('error', err )
-        }
+        };
+        setArcTokens(arcTokensOwned)
+        setGenTokens(genTokensOwned)
+        setNotMinted(genTokensNotOwned)
+
     }
   }
 
@@ -73,7 +86,7 @@ function App() {
   };
 
   const handleIncrement = () => {
-    if (mintAmount >= gtokensNotMinted.length ) return;
+    if (mintAmount >= globalNotMinted.length ) return;
     setMintAmount(mintAmount + 1);
   };
   
@@ -107,13 +120,13 @@ function App() {
         gen.abi,
         signer
       );
-      setArcHolder(Boolean(gtokensOwned[0]));
       try {
-        if (gtokensNotMinted.length === 0) {
+        if (globalNotMinted.length === 0) {
+          setMinting(Boolean(0));
           return;
         } else {
           // shuffle tokenNull array 
-          let tokenRandom = gtokensNotMinted.sort(function () {
+          let tokenRandom = globalNotMinted.sort(function () {
             return Math.random() - 0.5;
           });
           console.log(tokenRandom)
@@ -128,9 +141,10 @@ function App() {
             console.log('response: ', response) 
             setMinting(Boolean(0));
             setMinted(Boolean(1))
+            connectAccount();
           }
         }
-        connectAccount();
+        
       } 
       catch (err) {
           console.log('error', err )
@@ -155,14 +169,14 @@ function App() {
 
         <p className="inactive">
           {(isConnected) && (<span>Connected.</span>) }
-          {(isConnected && gtokensNotMinted.length===0) && (<span> You must hold Arcturium to mint. Public mint opens 2:00 pm EST 24/09/2022</span>)}
-          { (isConnected && gtokensNotMinted.length>0) && (<span>You have {gtokensNotMinted.length} Gen-0 available to mint.</span>)}
+          {(isConnected && globalArcTokens.length===0) && (<span> You must hold Arcturium to mint. Public mint opens 2:00 pm EST 24/09/2022</span>)}
+          { (isConnected && globalNotMinted.length>0) && (<span>You have {globalNotMinted.length} Gen-0 available to mint.</span>)}
           
           </p>
         
         {isTotalSupply && <div> <p className='inactive'> {totalSupply} of 6000 Gen-0 Characters have been minted.</p></div>}
-        <p className='inactive'>{(isMinting && isArcHolder ) && <span>Minting...</span>} {isMinted && <span>Minted.</span>}</p>
-        {(isMinting && !isArcHolder) && <p className='inactive'>Minting cancelled. You must hold Arcturium to mint. Public mint opens 2:00 pm EST 24/09/2022</p>}
+        <p className='inactive'>{(isMinting && Boolean(globalArcTokens) ) && <span>Minting...</span>} {isMinted && <span>Minted.</span>}</p>
+        {(isMinting && !Boolean(globalArcTokens)) && <p className='inactive'>Minting cancelled. You must hold Arcturium to mint. Public mint opens 2:00 pm EST 24/09/2022</p>}
         
 
 
@@ -173,7 +187,7 @@ function App() {
           )}
         </div>
         <div>
-          {(isConnected && isArcHolder) &&  ( 
+          {(isConnected && Boolean(globalArcTokens)) &&  ( 
             <div className="mintControls">
               <div>
                 <p><span className='button'
@@ -198,7 +212,7 @@ function App() {
               </p>
             </div>
           ) }
-          {(isConnected && gtokensNotMinted===0) && <p>All of your Arcturium has been redeemed already. Public mint opens 2:00 pm EST 24/09/2022</p>}
+          {(isConnected && globalNotMinted===0) && <p>All of your Arcturium has been redeemed already. Public mint opens 2:00 pm EST 24/09/2022</p>}
         </div>
       </div>
       </div>
