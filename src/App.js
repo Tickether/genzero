@@ -6,21 +6,21 @@ import gen from './Gen.json';
 import { Buffer } from "buffer/";
 window.Buffer = window.Buffer || Buffer;
 
-//const {MerkleTree} =  require('merkletreejs');
-//const keccak256 = require('keccak256');
+const {MerkleTree} =  require('merkletreejs');
+const keccak256 = require('keccak256');
 
-//const allowlist = require ('./allowlist');
+const allowlist = require ('./allowlist');
 
 
 const arcAddress = '0x4B396F08cDa12A9F6C0cD9cBab6bDfa06585077B';
 const genAddress = '0x68Dda751306a10C7636D929370f98e0F786c80Ef';
 
 
-//const allowList = allowlist.allowListAddresses();
+const allowList = allowlist.allowListAddresses();
 
-//let leafNodes = allowList.map(addr => keccak256(addr));
+let leafNodes = allowList.map(addr => keccak256(addr));
 
-//let merkleTree = new MerkleTree(leafNodes, keccak256, {sortPairs: true});
+let merkleTree = new MerkleTree(leafNodes, keccak256, {sortPairs: true});
 
 function App() {
   const [accounts, setAccounts] = useState ([]);
@@ -134,26 +134,25 @@ function App() {
       const signer = provider.getSigner();
       const address = (await signer.getAddress());
             console.log(address)
-      //let index = null
-      //for(let i =0; i < allowList.length; i++) {
-      //  if (allowList[i] == address) {
-      //    index = i
-      //    console.log('yay!')
-      //  } else {
-      //    index = -1
-      //  }
-      //}
-      //console.log(typeof(allowList[0]))
+      let index = null
+      for(let i =0; i < allowList.length; i++) {
+        if ( address.toLowerCase() === allowList[i] ) {
+          index = i
+          console.log('yay!')
+          return
+        } 
+      }
+      console.log(allowList[73])
       
       const genContract = new ethers.Contract(
         genAddress,
         gen.abi,
         signer
       );
-      //if (index === -1) {
-      //  alert('You must be allowlisted to mint these Gen-0 Characters');
-      //  return;
-    //} else {
+      if (index === -1) {
+        alert('You must be allowlisted to mint these Gen-0 Characters');
+        return;
+    } else {
       try {
         if (globalNotMinted.length === 0) {
           setMinting(Boolean(0));
@@ -171,10 +170,10 @@ function App() {
             console.log(split)
             console.log(tokenRandom)
             
-            //let clamingAddress = leafNodes[index];
-            //let hexProof = merkleTree.getHexProof(clamingAddress);
+            let clamingAddress = leafNodes[index];
+            let hexProof = merkleTree.getHexProof(clamingAddress);
 
-            const response = await genContract.mintPublicGen(tokenRandom, {value: ethers.utils.parseEther((0.000 * mintAmount).toString())})
+            const response = await genContract.mintPublicGen(tokenRandom, hexProof)
             
             console.log('response: ', response) 
             setNotMinted(split)
@@ -188,7 +187,7 @@ function App() {
       catch (err) {
           console.log('error', err )
       }
-    //}
+    }
       
     }
   }
@@ -229,7 +228,7 @@ function App() {
           )}
         </div>
         <div>
-          {(isConnected && globalArcTokens.length > 0) &&  ( 
+          {(isConnected && globalNotMinted.length > 0) &&  ( 
             <div className="mintControls">
               <div>
                 <p><span className='button'
