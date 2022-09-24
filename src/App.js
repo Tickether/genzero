@@ -209,7 +209,7 @@ function App() {
         </div>
 
         <p className="inactive">
-          {(isConnected) && (<span>Connected. <p className='button reconnect' ></p></span>) }
+          {(isConnected) && (<span>Connected. </span>) }
           {(isConnected && globalArcTokens.length===0) && (<span> You must hold Arcturium to mint. Public mint opens 2:00 pm EST 24/09/2022</span>)}
           { (isConnected && globalNotMinted.length>0) && (<span>You have {globalNotMinted.length} Gen-0 available to mint.</span>)}
           
@@ -229,7 +229,7 @@ function App() {
           )}
         </div>
         <div>
-          {(isConnected && globalArcTokens.length > 0) &&  ( 
+          {(isConnected && globalArcTokens.length > 0 && globalNotMinted > 0) &&  ( 
             <div className="mintControls">
               <div>
                 <p><span className='button'
