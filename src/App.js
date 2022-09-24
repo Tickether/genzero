@@ -179,8 +179,8 @@ function App() {
           </p>
         
         {isTotalSupply && <div> <p className='inactive'> {totalSupply} of 6000 Gen-0 Characters have been minted.</p></div>}
-        <p className='inactive'>{(isMinting && Boolean(globalArcTokens) ) && <span>Minting...</span>} {isMinted && <span>Minted.</span>}</p>
-        {(isMinting && !Boolean(globalArcTokens)) && <p className='inactive'>Minting cancelled. You must hold Arcturium to mint. Public mint opens 2:00 pm EST 24/09/2022</p>}
+        <p className='inactive'>{(isMinting && Boolean(globalArcTokens) ) && <span>Waiting on confirmation...</span>} {isMinted && <span>Minting...</span>}</p>
+        {(isMinting && !Boolean(globalArcTokens)) && <p className='inactive'>Mint cancelled. You must hold Arcturium to mint. Public mint opens 2:00 pm EST 24/09/2022</p>}
         
 
 
