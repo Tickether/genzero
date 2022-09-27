@@ -30,7 +30,8 @@ let hexProof = "[" + hex_Proof + "]";
 console.log('hex Proof: ',hexProof)
 console.log('hex Proof: ',hexproof)
 //let index = allowList.indexOf(address);
-let index = allowList.indexOf('0x1e7728bc568439Fa8aEf0afCF035657887d3623f')
+let testAddress= '0xdb8e7e97D9f0158Fa69b539B61d0cD8EbB2c6264'
+let index = allowList.indexOf(testAddress.toLowerCase())
 
 console.log(index)
 

@@ -1,19 +1,30 @@
 import { useState } from 'react';
 import './App.css';
 import { ethers } from "ethers";
+import Onboard from '@web3-onboard/core'
+import injectedModule from '@web3-onboard/injected-wallets'
+//import ledgerModule from '@web3-onboard/ledger'
 import arc from './Arc.json';
 import gen from './Gen.json';
 import { Buffer } from "buffer/";
+
+import walletConnectModule from '@web3-onboard/walletconnect'
 window.Buffer = window.Buffer || Buffer;
+
+
+
+const walletConnect = walletConnectModule()
+//const ledger = ledgerModule()
 
 //const {MerkleTree} =  require('merkletreejs');
 //const keccak256 = require('keccak256');
+
 
 //const allowlist = require ('./allowlist');
 
 
 const arcAddress = '0x4B396F08cDa12A9F6C0cD9cBab6bDfa06585077B';
-const genAddress = '0x68Dda751306a10C7636D929370f98e0F786c80Ef';
+const genAddress = '0x5f095d8f0bb3bfc75355be996e8aafd5ad95b3a8';
 
 
 //const allowList = allowlist.allowListAddresses();
@@ -23,8 +34,9 @@ const genAddress = '0x68Dda751306a10C7636D929370f98e0F786c80Ef';
 //let merkleTree = new MerkleTree(leafNodes, keccak256, {sortPairs: true});
 
 function App() {
-  const [accounts, setAccounts] = useState ([]);
-  const isConnected = Boolean(accounts[0]);
+  //const [accounts, setAccounts] = useState([]);
+  const accounts = []
+  const [isConnected, setConnected] = useState(Boolean(0));
   const [isMinting, setMinting] = useState (Boolean(0));
   const [isMinted, setMinted] = useState (Boolean(0));
   const [mintAmount, setMintAmount] = useState (1);
@@ -40,19 +52,66 @@ function App() {
     let  arcTokensOwned = [];
     let  genTokensOwned = [];
     let genTokensNotMinted =  [];
-    if (window.ethereum) {
-        const accounts = await window.ethereum.request({
-            method: 'eth_requestAccounts',
-        });
-        setAccounts(accounts);
+    const MAINNET_RPC_URL = 'https://mainnet.infura.io/v3/a38f564330de45c8b14056143c2fcd32'
+        const injected = injectedModule()
+        const onboard = Onboard({
+          wallets: [
+            injected,
+            walletConnect,
+            //ledger
+          ],
+          chains: [
+            {
+              id: '0x1',
+              token: 'ETH',
+              label: 'Ethereum Mainnet',
+              rpcUrl: MAINNET_RPC_URL
+            },
+            {
+              id: '0x5',
+              token: 'ETH',
+              label: 'Ethereum Goerli Testnet',
+              rpcUrl: 'https://rpc.goerli.mudit.blog/'
+            },
+          ],
+          appMetadata: {
+            name: 'Eternity Complex',
+            icon: '../src/assets/backgrounds/favicon-32x32.png', // svg string icon
+            logo: '../src/assets/backgrounds/logo.png', // svg string logo
+            description: 'Mint your Eternity Complex NFTs',
+            recommendedInjectedWallets: [
+              { name: 'MetaMask', url: 'https://metamask.io' },
+              { name: 'Coinbase', url: 'https://wallet.coinbase.com/' }
+            ]
+          },
+        })
 
-        const arcURL = 'https://api.etherscan.io/api?module=account&action=tokennfttx&contractaddress='+arcAddress+'&address='+accounts[0]+'&page=1&offset=100&startblock=0&endblock=27025780&sort=asc&apikey=S3KASSMNT3ARZHEUU2NM9G3IMXH98BB8W7'
+        const accountData = await onboard.connectWallet()
+        const account = accountData[0]['accounts'][0]['address']
+        setConnected(Boolean(1));
+        accounts.push(account)
+        console.log(accounts[0])
+        console.log(account)
+
+        
+
+    if (Boolean(account)) {
+        //const accounts = await window.ethereum.request({
+           // method: 'eth_requestAccounts',
+         // });
+        //-------- For wider compatibility in wallet connection -----------
+        
+
+//----------------- End wallet connection additions
+
+
+        const arcURL = 'https://api.etherscan.io/api?module=account&action=tokennfttx&contractaddress='+arcAddress+'&address='+account+'&page=1&offset=100&startblock=0&endblock=27025780&sort=asc&apikey=S3KASSMNT3ARZHEUU2NM9G3IMXH98BB8W7'
         await fetch(arcURL)
           .then((response) => { return response.json();})
           .then((data) => {
             for(let i = 0; i < data.result.length; i++) {
               const owner = data.result[i]['to'];
-              if (owner === accounts[0]) {
+              if (owner === account) {
                 arcTokensOwned.push(data.result[i]['tokenID']);
               } else {
                 console.log("err");
@@ -62,7 +121,7 @@ function App() {
           });
           console.log(arcTokensOwned)
 
-          const genURL = 'https://api-goerli.etherscan.io/api?module=account&action=tokennfttx&contractaddress='+genAddress+'&address='+accounts[0]+'&page=1&offset=100&startblock=0&endblock=27025780&sort=asc&apikey=S3KASSMNT3ARZHEUU2NM9G3IMXH98BB8W7'
+          const genURL = 'https://api-goerli.etherscan.io/api?module=account&action=tokennfttx&contractaddress='+genAddress+'&address='+account+'&page=1&offset=100&startblock=0&endblock=27025780&sort=asc&apikey=S3KASSMNT3ARZHEUU2NM9G3IMXH98BB8W7'
         await fetch(genURL)
           .then((response) => { return response.json();})
           .then((data) => {
@@ -108,8 +167,9 @@ function App() {
   };
   
   async function getTotalSupply() {
-        
-    const provider = new ethers.providers.Web3Provider(window.ethereum);
+    let account = accounts[0]
+    const provider =new ethers.providers.Web3Provider(account.provider, 'any');
+
     const signer = provider.getSigner();
     const genContract = new ethers.Contract(
         genAddress,
@@ -129,8 +189,8 @@ function App() {
   async function handleGenMint() {
     setMinting(Boolean(1));
     setMinted(Boolean(0));
-    if (window.ethereum) {
-      const provider = new ethers.providers.Web3Provider(window.ethereum);
+    if (Boolean(accounts[0])) {
+      const provider = ethers.getDefaultProvider(['goerli'])
       const signer = provider.getSigner();
       const address = (await signer.getAddress());
             console.log(address)
@@ -229,7 +289,7 @@ function App() {
           )}
         </div>
         <div>
-          {(isConnected && globalArcTokens.length > 0 && globalNotMinted > 0) &&  ( 
+          {(isConnected && globalArcTokens.length > 0 && globalNotMinted.length > 0) &&  ( 
             <div className="mintControls">
               <div>
                 <p><span className='button'
