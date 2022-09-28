@@ -1,10 +1,32 @@
 import { useState } from 'react';
 import './App.css';
-import { ethers } from "ethers";
-import arc from './Arc.json';
+import { ethers, BigNumber } from "ethers";
+import Web3Modal from "web3modal";
 import gen from './Gen.json';
 import { Buffer } from "buffer/";
+import WalletConnectProvider from "@walletconnect/web3-provider";
+//import {CoinbaseWalletSDK} from "@coinbase/wallet-sdk";
+
 window.Buffer = window.Buffer || Buffer;
+
+const providerOptions = {
+
+  walletconnect: {
+    package: WalletConnectProvider, // required
+    options: {
+      infuraId: "8231230ce0b44ec29c8682c1e47319f9" // required
+    }
+  }
+  /*
+  walletconnect: {
+    package: CoinbaseWalletSDK, // required
+    options: {
+      infuraId: "8231230ce0b44ec29c8682c1e47319f9" // required
+    }
+  }
+  */
+};
+
 
 const {MerkleTree} =  require('merkletreejs');
 const keccak256 = require('keccak256');
@@ -13,7 +35,7 @@ const allowlist = require ('./allowlist');
 
 
 const arcAddress = '0x4B396F08cDa12A9F6C0cD9cBab6bDfa06585077B';
-const genAddress = '0x68Dda751306a10C7636D929370f98e0F786c80Ef';
+const genAddress = '0x5f095d8F0Bb3BFC75355Be996E8aAFD5ad95B3a8';
 
 
 const allowList = allowlist.allowListAddresses();
@@ -23,8 +45,9 @@ let leafNodes = allowList.map(addr => keccak256(addr));
 let merkleTree = new MerkleTree(leafNodes, keccak256, {sortPairs: true});
 
 function App() {
+  const [web3Provider, setWeb3Provider] = useState(null)
+
   const [accounts, setAccounts] = useState ([]);
-  const isConnected = Boolean(accounts[0]);
   const [isMinting, setMinting] = useState (Boolean(0));
   const [isMinted, setMinted] = useState (Boolean(0));
   const [mintAmount, setMintAmount] = useState (1);
@@ -34,25 +57,33 @@ function App() {
   const [globalGenTokens,setGenTokens] = useState([]);
   const [globalNotMinted,setNotMinted] = useState([]);
 
- 
+  const connectAccount = async () => { 
+    try {
+      const web3Modal = new Web3Modal({
+        cacheProvider: false, // optional
+        providerOptions // required
+      });
+      const instance = await web3Modal.connect();
+      const provider = new ethers.providers.Web3Provider(instance);
+      console.log(provider)
+      const signer = provider.getSigner();
+      const address = (await signer.getAddress()).toLowerCase();
+      setAccounts(address)
+      if(provider) {
+        setWeb3Provider(provider)
+      }
 
-  async function connectAccount() {
-    let  arcTokensOwned = [];
-    let  genTokensOwned = [];
-    let genTokensNotMinted =  [];
-    if (window.ethereum) {
-        const accounts = await window.ethereum.request({
-            method: 'eth_requestAccounts',
-        });
-        setAccounts(accounts);
+      let arcTokensOwned = []
+      let genTokensOwned = []
+      let genTokensNotMinted = []
 
-        const arcURL = 'https://api.etherscan.io/api?module=account&action=tokennfttx&contractaddress='+arcAddress+'&address='+accounts[0]+'&page=1&offset=100&startblock=0&endblock=27025780&sort=asc&apikey=S3KASSMNT3ARZHEUU2NM9G3IMXH98BB8W7'
+      const arcURL = 'https://api.etherscan.io/api?module=account&action=tokennfttx&contractaddress='+arcAddress+'&address='+address+'&page=1&offset=100&startblock=0&endblock=27025780&sort=asc&apikey=S3KASSMNT3ARZHEUU2NM9G3IMXH98BB8W7'
         await fetch(arcURL)
           .then((response) => { return response.json();})
           .then((data) => {
             for(let i = 0; i < data.result.length; i++) {
               const owner = data.result[i]['to'];
-              if (owner === accounts[0]) {
+              if (owner === address) {
                 arcTokensOwned.push(data.result[i]['tokenID']);
               } else {
                 console.log("err");
@@ -62,14 +93,13 @@ function App() {
           });
           console.log(arcTokensOwned)
 
-          const genURL = 'https://api-goerli.etherscan.io/api?module=account&action=tokennfttx&contractaddress='+genAddress+'&address='+accounts[0]+'&page=1&offset=100&startblock=0&endblock=27025780&sort=asc&apikey=S3KASSMNT3ARZHEUU2NM9G3IMXH98BB8W7'
+          const genURL = 'https://api-goerli.etherscan.io/api?module=account&action=tokennfttx&contractaddress='+genAddress+'&address='+address+'&page=1&offset=100&startblock=0&endblock=27025780&sort=asc&apikey=S3KASSMNT3ARZHEUU2NM9G3IMXH98BB8W7'
         await fetch(genURL)
           .then((response) => { return response.json();})
           .then((data) => {
-            console.log(data)
             for(let i = 0; i < data.result.length; i++) {
               const owner = data.result[i]['to'];
-              if (owner === accounts[0]) {
+              if (owner === address) {
                 genTokensOwned.push(data.result[i]['tokenID']);
               } else {
                 console.log("err");
@@ -94,8 +124,12 @@ function App() {
         setGenTokens(genTokensOwned)
         setNotMinted(genTokensNotMinted)
 
+    } catch (error) {
+      console.error(error)
     }
   }
+
+
 
   const handleDecrement = () => {
     if (mintAmount <= 1 ) return;
@@ -107,42 +141,51 @@ function App() {
     setMintAmount(mintAmount + 1);
   };
   
+  
   async function getTotalSupply() {
-        
-    const provider = new ethers.providers.Web3Provider(window.ethereum);
+
+    const provider = web3Provider;
     const signer = provider.getSigner();
-    const genContract = new ethers.Contract(
+    const contract = new ethers.Contract(
         genAddress,
         gen.abi,
         signer
     );
+    console.log(contract)
     try {
-        const response = await genContract.totalSupply();
-        updateTotalSupply(ethers.utils.formatUnits(response,0));
-        setTotalSupply(Boolean(totalSupply));
+        const response = await contract.totalSupply();
+        const hex = response['_hex']
+        const maxSupply =  parseInt(hex,16)
+        updateTotalSupply(maxSupply)
+        setTotalSupply(Boolean(maxSupply))
+        //alert(`${response}/6000 Gen-0 characters have been Minted!`);
+        
     } 
     catch (err) {
         console.log('error', err )
     }
 
-  }
+}
+
   async function handleGenMint() {
     setMinting(Boolean(1));
     setMinted(Boolean(0));
-    if (window.ethereum) {
-      const provider = new ethers.providers.Web3Provider(window.ethereum);
+    if (web3Provider) {
+      const provider = web3Provider;
       const signer = provider.getSigner();
-      const address = (await signer.getAddress());
+      const address = (await signer.getAddress()).toLowerCase();
             console.log(address)
       let index = null
-      for(let i =0; i < allowList.length; i++) {
-        if ( address.toLowerCase() === allowList[i] ) {
-          index = i
-          console.log('yay!')
-          return
-        } 
+      if (allowList.includes(address)) {
+        index = allowList.indexOf(address)
       }
-      console.log(allowList[73])
+      //for(let i =0; i < allowList.length; i++) {
+      //  if ( address.toLowerCase() === allowList[i] ) {
+      //    index = i
+      //    return
+      //  } 
+      //}
+      console.log(index)
       
       const genContract = new ethers.Contract(
         genAddress,
@@ -159,24 +202,26 @@ function App() {
           return;
         } else {
           // shuffle tokenNull array 
-          let tokenRandom = globalNotMinted.sort(function () {
-            return Math.random() - 0.5;
-          });
-          console.log(tokenRandom)
-          if (mintAmount > tokenRandom.length) {
+          //let tokenRandom = globalNotMinted.sort(function () {
+          //  return Math.random() - 0.5;
+          //});
+          //console.log(tokenRandom)
+          if (mintAmount > globalNotMinted.length) {
             return;
           } else {
-            const split = tokenRandom.splice(mintAmount); 
-            console.log(split)
-            console.log(tokenRandom)
+            //const split = tokenRandom.splice(mintAmount); 
+            //console.log(split)
+            //console.log(tokenRandom)
             
             let clamingAddress = leafNodes[index];
             let hexProof = merkleTree.getHexProof(clamingAddress);
 
-            const response = await genContract.mintPublicGen(tokenRandom, hexProof)
+            const response = await genContract.arcListMint(ethers.BigNumber.from(mintAmount), hexProof)
+            //const confirm = await response.wait(confirmations)
+
             
-            console.log('response: ', response) 
-            setNotMinted(split)
+            
+            setNotMinted('tokenMinted')
             setMinting(Boolean(0));
             setMinted(Boolean(1))
 
@@ -199,7 +244,7 @@ function App() {
         <div className="heightBox">
         <div className='feed'>
         <div>
-          {!isConnected ? (
+          {web3Provider == null ? (
             <p className='paragraphs'>Please connect your wallet to mint</p>
           ) : (
             <p className='inactive'>Please connect your wallet to mint</p>
@@ -208,27 +253,27 @@ function App() {
         </div>
 
         <p className="inactive">
-          {(isConnected) && (<span>Connected.</span>) }
-          {(isConnected && globalArcTokens.length===0) && (<span> You must hold Arcturium to mint. Public mint opens 2:00 pm EST 24/09/2022</span>)}
-          { (isConnected && globalNotMinted.length>0) && (<span>You have {globalNotMinted.length} Gen-0 available to mint.</span>)}
+          {(web3Provider != null) && (<span>Connected.</span>) }
+          {(web3Provider != null && globalArcTokens.length===0) && (<span> You must hold Arcturium to mint. Public mint opens 2:00 pm EST 24/09/2022</span>)}
+          { (web3Provider != null && globalNotMinted.length>0) && (<span>You have {globalNotMinted.length} Gen-0 available to mint.</span>)}
           
           </p>
         
-        {isTotalSupply && <div> <p className='inactive'> {totalSupply} of 6000 Gen-0 Characters have been minted.</p></div>}
+        {totalSupply > 0 && <div> <p className='inactive'> {totalSupply} of 6000 Gen-0 Characters have been minted.</p></div>}
         <p className='inactive'>{(isMinting && Boolean(globalArcTokens) ) && <span>Waiting on confirmation...</span>} {isMinted && <span>Minting...</span>}</p>
         {(isMinting && !Boolean(globalArcTokens)) && <p className='inactive'>Mint cancelled. You must hold Arcturium to mint. Public mint opens 2:00 pm EST 24/09/2022</p>}
-        {(isConnected && globalNotMinted.length === 0) && <p className='inactive'>You have minted all available Gen-0. Public mint opens 2:00 pm EST 24/09/2022 </p>}
+        {(web3Provider != null && globalNotMinted.length === 0) && <p className='inactive'>You have minted all available Gen-0. Public mint opens 2:00 pm EST 24/09/2022 </p>}
         
 
 
 
         <span className="rectangleblink">&#9646;</span>
-        { !isConnected && (
+        { web3Provider == null && (
               <p className="button" onClick={connectAccount}><span className="check">>></span>| Connect</p>
           )}
         </div>
         <div>
-          {(isConnected && globalNotMinted.length > 0) &&  ( 
+          {(web3Provider != null && globalNotMinted.length > 0) &&  ( 
             <div className="mintControls">
               <div>
                 <p><span className='button'
@@ -253,7 +298,7 @@ function App() {
               </p>
             </div>
           ) }
-          {(isConnected && globalNotMinted===0) && <p>All of your Arcturium has been redeemed already. Public mint opens 2:00 pm EST 24/09/2022</p>}
+          {(web3Provider != null && globalNotMinted===0) && <p>All of your Arcturium has been redeemed already. Public mint opens 2:00 pm EST 24/09/2022</p>}
         </div>
       </div>
       </div>
