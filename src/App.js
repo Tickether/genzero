@@ -276,7 +276,7 @@ function App() {
         
 
         {(isConfirming && !Boolean(globalArcTokens)) && <p className='paragraph'>Mint cancelled. You must hold Arcturium to mint. Public mint opens 2:00 pm EST 24/09/2022</p>}
-        {(web3Provider != null && globalNotMinted === 0) && <p className='paragraph'>You have minted all available Gen-0. Public mint opens 2:00 pm EST 24/09/2022 </p>}
+        {(web3Provider != null && globalNotMinted === 0 && globalArcTokens != 0) && <p className='paragraph'>You have minted all available Gen-0. Public mint opens 2:00 pm EST 24/09/2022 </p>}
         
 
 
@@ -312,7 +312,6 @@ function App() {
               </p>
             </div>
           ) }
-          {(web3Provider != null && globalNotMinted === 0) && <p>All of your Arcturium has been redeemed already. Public mint opens 2:00 pm EST 24/09/2022</p>}
         </div>
       </div>
       </div>
