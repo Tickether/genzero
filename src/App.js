@@ -5,7 +5,8 @@ import Web3Modal from "web3modal";
 import gen from './Gen.json';
 import { Buffer } from "buffer/";
 import WalletConnectProvider from "@walletconnect/web3-provider";
-//import {CoinbaseWalletSDK} from "@coinbase/wallet-sdk";
+import {CoinbaseWalletSDK} from "@coinbase/wallet-sdk";
+//import { coinbasewallet } from 'web3modal/dist/providers/connectors';
 
 window.Buffer = window.Buffer || Buffer;
 
@@ -16,15 +17,14 @@ const providerOptions = {
     options: {
       infuraId: "8231230ce0b44ec29c8682c1e47319f9" // required
     }
-  }
-  /*
-  walletconnect: {
+  },
+  coinbasewallet: {
     package: CoinbaseWalletSDK, // required
     options: {
       infuraId: "8231230ce0b44ec29c8682c1e47319f9" // required
     }
   }
-  */
+  
 };
 
 
@@ -48,14 +48,16 @@ function App() {
   const [web3Provider, setWeb3Provider] = useState(null)
 
   const [accounts, setAccounts] = useState ([]);
-  const [isMinting, setMinting] = useState (Boolean(0));
-  const [isMinted, setMinted] = useState (Boolean(0));
+  const [isConfirming, setConfirming] = useState (Boolean(0));
+  const [isSent, setSent] = useState (Boolean(0));
+  const [isMinted, setMinted] = useState(Boolean(0));
   const [mintAmount, setMintAmount] = useState (1);
+  const [txnHash, setTxnHash] = useState('')
   const [totalSupply, updateTotalSupply] = useState ([]);
   const [isTotalSupply, setTotalSupply] = useState (Boolean(totalSupply[0]));
   const [globalArcTokens,setArcTokens] = useState([]);
   const [globalGenTokens,setGenTokens] = useState([]);
-  const [globalNotMinted,setNotMinted] = useState([]);
+  const [globalNotMinted,setNotMinted] = useState(null);
 
   const connectAccount = async () => { 
     try {
@@ -75,7 +77,6 @@ function App() {
 
       let arcTokensOwned = []
       let genTokensOwned = []
-      let genTokensNotMinted = []
 
       const arcURL = 'https://api.etherscan.io/api?module=account&action=tokennfttx&contractaddress='+arcAddress+'&address='+address+'&page=1&offset=100&startblock=0&endblock=27025780&sort=asc&apikey=S3KASSMNT3ARZHEUU2NM9G3IMXH98BB8W7'
         await fetch(arcURL)
@@ -108,17 +109,8 @@ function App() {
             }
           });
           console.log(genTokensOwned)
-        genTokensNotMinted.push.apply(genTokensNotMinted,arcTokensOwned);
+        let genTokensNotMinted = arcTokensOwned.length - genTokensOwned.length;
         
-        for(let i = 0; i < genTokensOwned.length; i++) {
-          let tokenID = genTokensOwned[i];
-          if (arcTokensOwned.includes(tokenID)) {
-            let index = genTokensNotMinted.indexOf(tokenID)
-            genTokensNotMinted.splice(index,1)
-          } else {
-            console.log('err');
-          }
-        };
         console.log(genTokensNotMinted)
         setArcTokens(arcTokensOwned)
         setGenTokens(genTokensOwned)
@@ -137,7 +129,7 @@ function App() {
   };
 
   const handleIncrement = () => {
-    if (mintAmount >= globalNotMinted.length ) return;
+    if (mintAmount >= globalNotMinted ) return;
     setMintAmount(mintAmount + 1);
   };
   
@@ -168,8 +160,8 @@ function App() {
 }
 
   async function handleGenMint() {
-    setMinting(Boolean(1));
-    setMinted(Boolean(0));
+    setConfirming(Boolean(1));
+    setSent(Boolean(0));
     if (web3Provider) {
       const provider = web3Provider;
       const signer = provider.getSigner();
@@ -197,8 +189,8 @@ function App() {
         return;
     } else {
       try {
-        if (globalNotMinted.length === 0) {
-          setMinting(Boolean(0));
+        if (globalNotMinted === 0) {
+          setConfirming(Boolean(0));
           return;
         } else {
           // shuffle tokenNull array 
@@ -206,7 +198,7 @@ function App() {
           //  return Math.random() - 0.5;
           //});
           //console.log(tokenRandom)
-          if (mintAmount > globalNotMinted.length) {
+          if (mintAmount > globalNotMinted) {
             return;
           } else {
             //const split = tokenRandom.splice(mintAmount); 
@@ -215,15 +207,24 @@ function App() {
             
             let clamingAddress = leafNodes[index];
             let hexProof = merkleTree.getHexProof(clamingAddress);
-
+            
             const response = await genContract.arcListMint(ethers.BigNumber.from(mintAmount), hexProof)
-            //const confirm = await response.wait(confirmations)
-
+            let transactionHash = response['hash']
+            setConfirming(Boolean(0));
+            setSent(Boolean(1))
+            const txReceipt = []
+            do {
+            let txr = await provider.getTransactionReceipt(transactionHash)
+            txReceipt[0]=txr
+            console.log('test')
+            } while (txReceipt[0] == null) ;
+            // did 2.5k loops before i abrted
             
-            
-            setNotMinted('tokenMinted')
-            setMinting(Boolean(0));
+            console.log(txReceipt[0])
+            setTxnHash(transactionHash)
             setMinted(Boolean(1))
+            setNotMinted(globalNotMinted-mintAmount)
+
 
           }
         }
@@ -252,17 +253,28 @@ function App() {
           }
         </div>
 
-        <p className="inactive">
+        <p className="paragraph">
           {(web3Provider != null) && (<span>Connected.</span>) }
           {(web3Provider != null && globalArcTokens.length===0) && (<span> You must hold Arcturium to mint. Public mint opens 2:00 pm EST 24/09/2022</span>)}
-          { (web3Provider != null && globalNotMinted.length>0) && (<span>You have {globalNotMinted.length} Gen-0 available to mint.</span>)}
+          { (web3Provider != null && globalNotMinted>0) && (<span>You have {globalNotMinted} Gen-0 available to mint.</span>)}
           
           </p>
         
-        {totalSupply > 0 && <div> <p className='inactive'> {totalSupply} of 6000 Gen-0 Characters have been minted.</p></div>}
-        <p className='inactive'>{(isMinting && Boolean(globalArcTokens) ) && <span>Waiting on confirmation...</span>} {isMinted && <span>Minting...</span>}</p>
-        {(isMinting && !Boolean(globalArcTokens)) && <p className='inactive'>Mint cancelled. You must hold Arcturium to mint. Public mint opens 2:00 pm EST 24/09/2022</p>}
-        {(web3Provider != null && globalNotMinted.length === 0) && <p className='inactive'>You have minted all available Gen-0. Public mint opens 2:00 pm EST 24/09/2022 </p>}
+        {totalSupply > 0 && <div> <p className='paragraph'> {totalSupply} of 6000 Gen-0 Characters have been minted.</p></div>}
+
+        
+          {(isConfirming && Boolean(globalArcTokens) ) && <p className='paragraph'>Awaiting confirmation in wallet...</p>} 
+
+          {isSent && <span><p className='inactive'>Awaiting confirmation in wallet...</p><br></br><p className='paragraph'> Transaction sent...</p></span>}
+          {isMinted && <span><p className='inactive'>Awaiting confirmation in wallet...</p>
+          <br></br>
+          <p className='inactive'> Transaction sent...</p>
+          <br></br>
+          <p className='paragraph'>Minted. Your transaction hash is {txnHash}</p></span>}
+        
+
+        {(isConfirming && !Boolean(globalArcTokens)) && <p className='paragraph'>Mint cancelled. You must hold Arcturium to mint. Public mint opens 2:00 pm EST 24/09/2022</p>}
+        {(web3Provider != null && globalNotMinted === 0) && <p className='paragraph'>You have minted all available Gen-0. Public mint opens 2:00 pm EST 24/09/2022 </p>}
         
 
 
@@ -273,7 +285,7 @@ function App() {
           )}
         </div>
         <div>
-          {(web3Provider != null && globalNotMinted.length > 0) &&  ( 
+          {(web3Provider != null && globalNotMinted > 0) &&  ( 
             <div className="mintControls">
               <div>
                 <p><span className='button'
@@ -298,7 +310,7 @@ function App() {
               </p>
             </div>
           ) }
-          {(web3Provider != null && globalNotMinted===0) && <p>All of your Arcturium has been redeemed already. Public mint opens 2:00 pm EST 24/09/2022</p>}
+          {(web3Provider != null && globalNotMinted === 0) && <p>All of your Arcturium has been redeemed already. Public mint opens 2:00 pm EST 24/09/2022</p>}
         </div>
       </div>
       </div>
