@@ -30,7 +30,8 @@ let hexProof = "[" + hex_Proof + "]";
 console.log('hex Proof: ',hexProof)
 console.log('hex Proof: ',hexproof)
 //let index = allowList.indexOf(address);
-let index = allowList.indexOf('0x1e7728bc568439Fa8aEf0afCF035657887d3623f')
+let testAddress = '0x1e7728bc568439Fa8aEf0afCF035657887d3623f'
+let index = allowList.indexOf(testAddress.toLowerCase())
 
 console.log(index)
 
@@ -41,3 +42,4 @@ console.log('claiming address:',clamingAddress)
 console.log('root hash: ', rootHash )
 
 
+//0x7aa3e0fb3c54d6176ce0ae9b6511211ed83b738472965e3c01c26b9ef3546bcc
