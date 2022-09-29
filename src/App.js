@@ -53,6 +53,7 @@ function App() {
   const [isMinted, setMinted] = useState(Boolean(0));
   const [mintAmount, setMintAmount] = useState (1);
   const [txnHash, setTxnHash] = useState('')
+  const [txnURL , setTxnURL] = useState('')
   const [totalSupply, updateTotalSupply] = useState ([]);
   const [isTotalSupply, setTotalSupply] = useState (Boolean(totalSupply[0]));
   const [globalArcTokens,setArcTokens] = useState([]);
@@ -222,6 +223,7 @@ function App() {
             
             console.log(txReceipt[0])
             setTxnHash(transactionHash)
+            setTxnURL('https://goerli.etherscan.io/tx/'+transactionHash)
             setMinted(Boolean(1))
             setNotMinted(globalNotMinted-mintAmount)
 
@@ -270,7 +272,7 @@ function App() {
           <br></br>
           <p className='inactive'> Transaction sent...</p>
           <br></br>
-          <p className='paragraph'>Minted. Your transaction hash is {txnHash}</p></span>}
+          <p className='paragraph'>Minted. Your transaction hash is <a href={txnURL}></a>{txnHash}</p></span>}
         
 
         {(isConfirming && !Boolean(globalArcTokens)) && <p className='paragraph'>Mint cancelled. You must hold Arcturium to mint. Public mint opens 2:00 pm EST 24/09/2022</p>}
